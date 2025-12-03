@@ -14,7 +14,6 @@ def render():
     data = st.session_state['audio_data']
     fs = st.session_state['fs']
     
-    # Analysis & Controls
     st.markdown("### 🔍 Analysis")
     
     st.markdown("""
@@ -50,18 +49,12 @@ def render():
             label_visibility="collapsed"
         )
         
-    # Compute FFT
-    # Always compute Linear first for correct SNR calculation
     freqs, magnitude_linear, phase = compute_fft(data, fs, window_type='Hann', scale='Linear')
 
     with col2:
-        # Calculate SNR using Linear Magnitude
-        # Peak Signal Power
         peak_idx = np.argmax(magnitude_linear)
         p_signal = magnitude_linear[peak_idx]**2
         
-        # Noise Power (mean of the rest)
-        # Exclude peak and immediate neighbors to avoid leakage
         mask = np.ones(len(magnitude_linear), dtype=bool)
         mask[max(0, peak_idx-2):min(len(magnitude_linear), peak_idx+3)] = False
         
@@ -73,17 +66,13 @@ def render():
             
         st.metric("Signal-to-Noise Ratio (SNR)", f"{snr:.2f} dB")
         
-    # Prepare data for plotting based on user selection
     if scale == "Log":
-        # Add small epsilon to avoid log(0)
         magnitude = 20 * np.log10(magnitude_linear + 1e-10)
     else:
         magnitude = magnitude_linear
     
-    # Visualization
     st.markdown("### 📊 Spectrum")
     
-    # Magnitude Plot
     fig_mag = go.Figure()
     
     fig_mag.add_trace(go.Scatter(
@@ -106,14 +95,9 @@ def render():
     
     st.plotly_chart(fig_mag, use_container_width=True)
     
-    # Peak Detection
     st.markdown("### 🏔️ Peak Frequencies")
     
-    # Simple peak detection
-    # Find indices of top 5 peaks
-    # Ignore DC component (index 0)
     if len(magnitude) > 1:
-        # Use a copy to avoid modifying original if needed, though argsort doesn't modify
         mag_no_dc = magnitude[1:]
         freqs_no_dc = freqs[1:]
         
@@ -124,7 +108,6 @@ def render():
         cols = st.columns(5)
         for i, (f, m) in enumerate(zip(top_freqs, top_mags)):
             with cols[i]:
-                # Format magnitude based on scale
                 if scale == "Linear":
                     mag_str = f"{m:.5f}"
                 else:

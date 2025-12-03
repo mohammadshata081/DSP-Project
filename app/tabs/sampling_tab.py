@@ -14,13 +14,10 @@ def render():
     data = st.session_state['audio_data']
     fs = st.session_state['fs']
     
-    # Controls
     st.markdown("### 🎛️ Controls")
     
     col1, col2 = st.columns(2)
     
-    # Calculate Nyquist Rate (2 * f_max)
-    # Find f_max where magnitude is significant (e.g., > 1% of peak)
     from dsp.fft_processor import compute_fft
     f_orig, mag_orig, _ = compute_fft(data, fs, window_type='Hann', scale='Linear')
     threshold = 0.01 * np.max(mag_orig)
@@ -52,34 +49,24 @@ def render():
             help="Higher bits = Less quantization noise"
         )
         
-    # Process
-    # 1. Resample
     resampled_signal, t_resampled = sample_signal(data, fs, new_fs)
     
-    # 2. Quantize
     quantized_signal, error = quantize_signal(resampled_signal, n_bits)
     
-    # Visualization
-    # Limit points for performance if needed, but let's try to show a zoomed in view by default
     st.markdown("### 📊 Visualization")
     
-    # Zoom slider
     zoom_range = st.slider("Zoom (Samples)", 0, len(data), (0, 1000))
     start_idx, end_idx = zoom_range
     
-    # Adjust indices for resampled signal
     ratio = new_fs / fs
     start_res = int(start_idx * ratio)
     end_res = int(end_idx * ratio)
     
-    # Create Plotly Figure
     fig = go.Figure()
     
-    # Original Signal
     t_orig = np.arange(start_idx, end_idx) / fs
     y_orig = data[start_idx:end_idx]
     
-    # Optimization: Downsample for plotting if too many points
     max_plot_points = 5000
     if len(t_orig) > max_plot_points:
         step = int(np.ceil(len(t_orig) / max_plot_points))
@@ -99,12 +86,9 @@ def render():
         opacity=0.7
     ))
     
-    # Resampled/Quantized Signal
-    # We plot this as step or markers to show sampling
     t_new = t_resampled[start_res:end_res]
     y_new = quantized_signal[start_res:end_res]
     
-    # Optimization for resampled plot
     if len(t_new) > max_plot_points:
         step_new = int(np.ceil(len(t_new) / max_plot_points))
         t_new_plot = t_new[::step_new]
@@ -139,7 +123,6 @@ def render():
     
     st.plotly_chart(fig, use_container_width=True)
     
-    # Error Plot
     st.markdown("### 📉 Quantization Error", help="Quantization error is the difference between the analog signal and the closest available digital value at each sampling instant. It introduces noise, often called quantization noise.")
     
     fig_err = go.Figure()
@@ -161,7 +144,6 @@ def render():
     
     st.plotly_chart(fig_err, use_container_width=True)
     
-    # Metrics
     st.markdown("### 📝 Metrics")
     col1, col2 = st.columns(2)
     
@@ -176,8 +158,6 @@ def render():
         """, unsafe_allow_html=True)
         
     with col2:
-        # Calculate SNR (Signal to Noise Ratio)
-        # SNR = 10 * log10(P_signal / P_noise)
         p_signal = np.mean(resampled_signal**2)
         p_noise = np.mean(error**2)
         

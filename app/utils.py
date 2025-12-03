@@ -95,12 +95,10 @@ def save_to_history(uploaded_file):
     if not os.path.exists(RECENT_DIR):
         os.makedirs(RECENT_DIR)
         
-    # Save file to disk
     file_path = os.path.join(RECENT_DIR, uploaded_file.name)
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
         
-    # Update history
     history = []
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as f:
@@ -109,14 +107,11 @@ def save_to_history(uploaded_file):
             except:
                 history = []
     
-    # Remove if already exists to move to top
     if file_path in history:
         history.remove(file_path)
         
-    # Add to top
     history.insert(0, file_path)
     
-    # Keep max 5
     history = history[:5]
     
     with open(HISTORY_FILE, 'w') as f:

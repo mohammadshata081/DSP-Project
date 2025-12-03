@@ -16,7 +16,6 @@ def render():
     data = st.session_state['audio_data']
     fs = st.session_state['fs']
     
-    # Filter Analysis
     st.markdown("### 📘 Filter Analysis")
     st.markdown("""
     **Low-pass filters** are designed to pass signals with a frequency lower than a certain cutoff frequency and attenuate signals with frequencies higher than the cutoff frequency.
@@ -36,18 +35,14 @@ def render():
     This threshold is chosen to preserve the majority of the signal's energy (and thus information) while filtering out high-frequency noise components that typically carry less significant information.
     """)
     
-    # Controls
     st.markdown("### 🎛️ Filter Controls")
     
-    # Only Low-pass Filter is available
     method = "Low-pass Filter"
     
-    # Calculate Effective Cutoff (95% Energy Bandwidth)
     from dsp.fft_processor import compute_fft
     f_spec, mag_spec, _ = compute_fft(data, fs, window_type='Hann', scale='Linear')
     total_energy = np.sum(mag_spec**2)
     cumulative_energy = np.cumsum(mag_spec**2)
-    # Find frequency where 95% of energy is contained
     idx_95 = np.searchsorted(cumulative_energy, 0.95 * total_energy)
     effective_cutoff = f_spec[idx_95]
     
@@ -62,7 +57,6 @@ def render():
     )
     processed_data = apply_lowpass(data, fs, cutoff)
             
-    # Playback
     st.markdown("### 🎧 Audio Preview")
     col1, col2 = st.columns(2)
     with col1:
@@ -72,17 +66,13 @@ def render():
         st.markdown(f"**Processed**")
         st.audio(processed_data, sample_rate=fs)
         
-    # Download
     st.markdown(get_audio_download_link(processed_data, fs, f"cleaned_{method.lower().replace(' ', '_')}.wav"), unsafe_allow_html=True)
     
-    # Visualization
     st.markdown("### 📊 Spectrogram Comparison")
     
-    # Compute Spectrograms
     f_orig, t_orig, Sxx_orig = spectrogram(data, fs)
     f_proc, t_proc, Sxx_proc = spectrogram(processed_data, fs)
     
-    # Log scale for better visibility
     Sxx_orig_log = 10 * np.log10(Sxx_orig + 1e-10)
     Sxx_proc_log = 10 * np.log10(Sxx_proc + 1e-10)
     
@@ -120,16 +110,13 @@ def render():
         )
         st.plotly_chart(fig2, use_container_width=True)
         
-    # Spectrum Comparison
     st.markdown("### 📉 Frequency Spectrum Comparison")
     
-    # Compute FFTs
     freqs_orig, mag_orig, _ = compute_fft(data, fs, window_type='Hann', scale='Log')
     freqs_proc, mag_proc, _ = compute_fft(processed_data, fs, window_type='Hann', scale='Log')
     
     fig_spec = go.Figure()
     
-    # Original Spectrum
     fig_spec.add_trace(go.Scatter(
         x=freqs_orig,
         y=mag_orig,
@@ -139,7 +126,6 @@ def render():
         opacity=0.6
     ))
     
-    # Processed Spectrum
     fig_spec.add_trace(go.Scatter(
         x=freqs_proc,
         y=mag_proc,

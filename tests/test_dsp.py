@@ -3,7 +3,6 @@ import numpy as np
 import sys
 import os
 
-# Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from dsp.sampler import sample_signal, quantize_signal
@@ -29,39 +28,31 @@ class TestDSP(unittest.TestCase):
         n_bits = 4
         quantized, error = quantize_signal(self.signal, n_bits)
         
-        # Check if values are within range [-1, 1]
         self.assertTrue(np.all(quantized >= -1))
         self.assertTrue(np.all(quantized <= 1))
         
-        # Check number of unique levels (should be <= 2^n_bits)
         unique_levels = len(np.unique(quantized))
         self.assertLessEqual(unique_levels, 2**n_bits)
         
     def test_fft(self):
         freqs, mag, phase = compute_fft(self.signal, self.fs)
         
-        # Peak should be at 10Hz
         peak_idx = np.argmax(mag)
         peak_freq = freqs[peak_idx]
         
         self.assertAlmostEqual(peak_freq, self.f_sig, delta=1)
         
     def test_lowpass(self):
-        # Create signal with low (10Hz) and high (400Hz) freq
         high_freq_sig = np.sin(2 * np.pi * 400 * self.t)
         mixed_sig = self.signal + high_freq_sig
         
-        # Filter out 400Hz (cutoff 100Hz)
         filtered = apply_lowpass(mixed_sig, self.fs, cutoff=100)
         
-        # Check FFT of filtered signal
         freqs, mag, _ = compute_fft(filtered, self.fs)
         
-        # Magnitude at 10Hz should be high
         idx_10 = np.argmin(np.abs(freqs - 10))
         mag_10 = mag[idx_10]
         
-        # Magnitude at 400Hz should be low
         idx_400 = np.argmin(np.abs(freqs - 400))
         mag_400 = mag[idx_400]
         

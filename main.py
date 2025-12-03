@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import sys
 
-# Add project root to path
 
 
 from app.utils import load_css, render_header, save_to_history, get_recent_files
@@ -10,7 +9,6 @@ from app.tabs import sampling_tab, fft_tab, denoise_tab
 import soundfile as sf
 import numpy as np
 
-# Page Config
 st.set_page_config(
     page_title="DSP Processor App",
     page_icon="🎵",
@@ -18,14 +16,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Load Custom CSS
 load_css()
 
-# Sidebar
 with st.sidebar:
     st.title("🎛️ DSP Tools")
     
-    # Navigation
     page = st.radio(
         "Navigate",
         ["Home", "Sampling & Quantization", "FFT Analysis", "Denoising"],
@@ -56,7 +51,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("Created for DSP Course")
 
-# Main Content
 if page == "Home":
     render_header("DSP Processor App", "")
     
@@ -67,15 +61,12 @@ if page == "Home":
         uploaded_file = st.file_uploader("Upload Audio", type=['wav'], label_visibility="collapsed")
         
         if uploaded_file:
-            # Save to history
             save_to_history(uploaded_file)
             
             st.session_state['uploaded_file'] = uploaded_file
             st.success(f"Loaded: {uploaded_file.name}")
             
-            # Load audio data immediately
             data, fs = sf.read(uploaded_file)
-            # Handle stereo
             if len(data.shape) > 1:
                 data = data.mean(axis=1)
                 
