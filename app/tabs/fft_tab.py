@@ -51,27 +51,34 @@ def render():
         )
         
     # Compute FFT
-    # Hardcoded window_type to 'Hann' as per requirements
-    freqs, magnitude, phase = compute_fft(data, fs, window_type='Hann', scale=scale)
+    # Always compute Linear first for correct SNR calculation
+    freqs, magnitude_linear, phase = compute_fft(data, fs, window_type='Hann', scale='Linear')
 
     with col2:
-        # Calculate SNR
+        # Calculate SNR using Linear Magnitude
         # Peak Signal Power
-        peak_idx = np.argmax(magnitude)
-        p_signal = magnitude[peak_idx]**2
+        peak_idx = np.argmax(magnitude_linear)
+        p_signal = magnitude_linear[peak_idx]**2
         
         # Noise Power (mean of the rest)
         # Exclude peak and immediate neighbors to avoid leakage
-        mask = np.ones(len(magnitude), dtype=bool)
-        mask[max(0, peak_idx-2):min(len(magnitude), peak_idx+3)] = False
+        mask = np.ones(len(magnitude_linear), dtype=bool)
+        mask[max(0, peak_idx-2):min(len(magnitude_linear), peak_idx+3)] = False
         
         if np.any(mask):
-            p_noise = np.mean(magnitude[mask]**2)
+            p_noise = np.mean(magnitude_linear[mask]**2)
             snr = 10 * np.log10(p_signal / p_noise) if p_noise > 0 else float('inf')
         else:
             snr = float('inf')
             
         st.metric("Signal-to-Noise Ratio (SNR)", f"{snr:.2f} dB")
+        
+    # Prepare data for plotting based on user selection
+    if scale == "Log":
+        # Add small epsilon to avoid log(0)
+        magnitude = 20 * np.log10(magnitude_linear + 1e-10)
+    else:
+        magnitude = magnitude_linear
     
     # Visualization
     st.markdown("### 📊 Spectrum")
